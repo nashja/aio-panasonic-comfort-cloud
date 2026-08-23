@@ -275,7 +275,7 @@ class PanasonicAuthentication:
             },
             json={"state_transport": "polling"},
             allow_redirects=False)
-        await check_response(start_response, 'guardian_start_flow', [200, 201])
+        await check_response(start_response, 'guardian_start_flow', [200, 201, 204])
         start_body = json.loads(await start_response.text())
         transaction_token = start_body.get("transactionToken") or start_body.get("transaction_token")
         if not transaction_token:
@@ -297,7 +297,7 @@ class PanasonicAuthentication:
         }))
         if verify_response.status == 403:
             raise exceptions.ResponseError(f"Invalid MFA/OTP code: {verify_text}")
-        await check_response(verify_response, 'guardian_verify_otp', [200, 201])
+        await check_response(verify_response, 'guardian_verify_otp', [200, 201, 204])
 
         signature = None
         for _ in range(10):
@@ -308,7 +308,7 @@ class PanasonicAuthentication:
                     "Accept": "application/json",
                 },
                 allow_redirects=False)
-            await check_response(state_response, 'guardian_transaction_state', [200, 201])
+            await check_response(state_response, 'guardian_transaction_state', [200, 201, 204 ])
             state_body = json.loads(await state_response.text())
             state = state_body.get("state")
             if state == "accepted":
