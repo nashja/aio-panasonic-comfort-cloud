@@ -22,6 +22,54 @@ def read_value(json, key, default_value):
     return default_value if value is None else value
 
 
+class HWSTemperatureSettingLimits:
+    """Temperature set limits for the HWS tank"""
+
+    def __init__(self, json=None) -> None:
+        self._set1_end_temperature: int | None = None
+        self._set2_start_temperature_min: int | None = None       
+        self._set2_start_temperature_max: int | None = None 
+        self._set2_end_temperature_min: int | None = None       
+        self._set2_end_temperature_max: int | None = None                                    
+        self.load(json)
+
+    @property
+    def has_changed(self):
+        return self._has_changed
+
+    @property
+    def set1_end_temperature(self):
+        return  self._set1_end_temperature
+
+    @property
+    def set2_start_temperature_min(self):
+        return self._set2_start_temperature_min
+
+    @property
+    def set2_start_temperature_max(self):
+        return self._set2_start_temperature_max
+
+    @property
+    def set2_end_temperature_min(self):
+        return self._set2_end_temperature_min
+
+    @property
+    def set2_end_temperature_max(self):
+        return self._set2_end_temperature_max    
+    
+    def load(self, json) -> bool:
+        if not json:
+            return False
+        self._has_changed = False
+        self._set1_end_temperature = read_value(json, 'set1EndTemperature', self._set1_end_temperature)
+        self._set2_start_temperature_min = read_value(json, 'set2StartTemperatureMin', self._set2_start_temperature_min)
+        self._set2_start_temperature_max = read_value(json, 'set2StartTemperatureMax', self._set2_start_temperature_max)
+        self._set2_end_temperature_min = read_value(json, 'set2EndTemperatureMin', self._set2_end_temperature_min)
+        self._set2_end_temperature_max = read_value(json, 'set2EndTemperatureMax', self._set2_end_temperature_max)
+        self._has_changed = True
+        return self._has_changed
+
+
 class HwsDeviceParameters:
     """Live status of a standalone Heat Pump Hot Water tank unit
     (deviceType "11", e.g. HE-UM40CR).
@@ -103,6 +151,19 @@ class HwsDeviceParameters:
         self.boost_mode = read_enum(json, 'boostMode', constants.AquareaOperationStatus, self.boost_mode)
         self.tank_temperature = read_value(json, 'tankTemperature', self.tank_temperature)
 
+        self._load_temperature_setting_limits(json)
         has_changed = self._has_changed
         self._has_changed = False
         return has_changed
+
+    def _load_temperature_setting_limits(self, json):
+        limits_json = json.get('temperatureSettingLimits')
+        if not limits_json:
+            self._has_limits = False
+            return
+        self._has_limits = True
+        if not self._has_limits:
+            self._limits = HWSTemperatureSettingLimits(limits_json)
+        else:
+            self._limits.load(limits_json)
+        self._has_changed = True
