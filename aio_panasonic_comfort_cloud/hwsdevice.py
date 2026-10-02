@@ -17,7 +17,7 @@ class HwsDevice:
 
     def __init__(self, info: PanasonicDeviceInfo, json=None) -> None:
         self._info = info
-        self._parameters: HwsDeviceParameters | None = None
+        self._deviceParameters: HwsDeviceParameters | None = None
         self._last_update = datetime.now(timezone.utc)
         self.load(json)
 
@@ -30,10 +30,10 @@ class HwsDevice:
         return self._info
 
     @property
-    def parameters(self) -> HwsDeviceParameters:
-        if self._parameters is None:
+    def deviceParameters(self) -> HwsDeviceParameters:
+        if self._deviceParameters is None:
             raise DeviceIsNotReadyError
-        return self._parameters
+        return self._deviceParameters
 
     @property
     def last_update(self) -> datetime:
@@ -46,13 +46,13 @@ class HwsDevice:
         if not json:
             return False
 
-        parameters_json = json.get('parameters')
+        parameters_json = json #json.get('parameters')
         has_changed = False
-        if not self._parameters:
-            self._parameters = HwsDeviceParameters(parameters_json)
+        if not self._deviceParameters:
+            self._deviceParameters = HwsDeviceParameters(parameters_json)
             has_changed = True
         else:
-            has_changed = self._parameters.load(parameters_json) or has_changed
+            has_changed = self._deviceParameters.load(parameters_json) or has_changed
 
         if has_changed:
             self._last_update = datetime.now(timezone.utc)

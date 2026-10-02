@@ -19,14 +19,14 @@ class HwsMixin(ApiClientCore):
         if (device_info.status_data_mode == constants.StatusDataMode.LIVE
             or (device_info.id in self._cache_devices and self._cache_devices[device_info.id] <= 0)):
             try:
-                json_response = await self.execute_get(self._get_hws_device_status_url(device_info.guid), "get_hws_status", 200)
+                json_response = await self.execute_get(self._get_hws_device_info_url(device_info.guid), "get_hws_status", 200)
                 device_info.status_data_mode = constants.StatusDataMode.LIVE
                 return json_response
             except Exception as e:  # noqa: BLE001
                 _LOGGER.warning(f"Failed to get live status for device {device_info.guid} switching to cached data.{e}")
                 device_info.status_data_mode = constants.StatusDataMode.CACHED
                 self._cache_devices[device_info.id] = 10
-        json_response = await self.execute_get(self._get_hws_device_status_url(device_info.guid), "get_status", 200)
+        json_response = await self.execute_get(self._get_hws_device_info_url(device_info.guid), "get_status", 200)
         self._cache_devices[device_info.id] -= 1
         return json_response
 

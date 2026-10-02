@@ -1,6 +1,7 @@
 import logging
 
 from .. import constants
+from ..exceptions import DeviceIsNotReadyError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -181,7 +182,35 @@ class HwsDeviceParameters:
     @property
     def has_changed(self):
         return self._has_changed
+    
+    @property
+    def parameters(self) -> HwsParameters:
+        if self._parameters is None:
+            raise DeviceIsNotReadyError
+        return self._parameters
+    
+    @property
+    def limits(self) -> HwsParameters:
+        if self._limits is None:
+            raise DeviceIsNotReadyError
+        return self._limits
 
+    @property
+    def permission(self):
+        return  self._permission
+
+    @property
+    def weekly_mode(self):
+        return  self._weekly_mode
+
+    @property
+    def pv_mode(self):
+        return  self._pv_mode
+
+    @property
+    def holiday_mode(self):
+        return  self._holiday_mode
+    
 
     def load(self, json) -> bool:
         if not json:
