@@ -174,7 +174,6 @@ class HwsDeviceParameters:
         self._pv_mode: bool | None = None
         self._holiday_mode: bool | None = None
 
-        self._parameters: HwsParameters | None = None
         self._limits: HwsTemperatureSettingLimits | None = None
         self._has_changed = False
         self.load(json)
@@ -184,13 +183,7 @@ class HwsDeviceParameters:
         return self._has_changed
     
     @property
-    def parameters(self) -> HwsParameters:
-        if self._parameters is None:
-            raise DeviceIsNotReadyError
-        return self._parameters
-    
-    @property
-    def limits(self) -> HwsParameters:
+    def limits(self) -> HwsTemperatureSettingLimits:
         if self._limits is None:
             raise DeviceIsNotReadyError
         return self._limits
@@ -222,8 +215,6 @@ class HwsDeviceParameters:
         self._pv_mode = read_value(json, 'pvMode', self._pv_mode)
         self._holiday_mode = read_value(json, 'holidayMode', self._holiday_mode)
 
-
-        self._load_parameters(json)
         self._load_temperature_setting_limits(json)
         
         has_changed = self._has_changed
@@ -242,14 +233,4 @@ class HwsDeviceParameters:
             self._limits.load(limits_json)
         self._has_changed = True
 
-    def _load_parameters(self, json):
-        parameters_json = json.get('parameters')
-        if not parameters_json:
-            self._has_parameters = False
-            return
-        self._has_parameters = True
-        if not self._parameters:
-            self._parameters = HwsParameters(parameters_json)
-        else:
-            self._parameters.load(parameters_json)
-        self._has_changed = True
+
