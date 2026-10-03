@@ -234,3 +234,63 @@ class HwsDeviceParameters:
         self._has_changed = True
 
 
+class HwsConsumption:
+    """One entry of HWS energy consumption/cost history, broken down by
+    only for hot-water-tank, as returned by the hphw/deviceHistoryData 
+    endpoint
+    """
+
+    def __init__(self, json=None) -> None:
+
+        self._tank_consumption: float | None = None
+        self._tank_cost: float | None = None
+        self._data_time: str | None = None
+        self._outdoor_temp: float | None = None
+        self._tank_temp: float | None = None
+        self.load(json)
+
+    @property
+    def tank_consumption(self):
+        return self._tank_consumption
+
+    @property
+    def tank_cost(self):
+        return self._tank_cost
+
+    @property
+    def data_time(self):
+        return self._data_time
+
+    @property
+    def outdoor_temp(self):
+        return self._outdoor_temp
+    
+    @property
+    def tank_temp(self):
+        return self._tank_temp
+
+    @property
+    def total_consumption(self):
+        return self._tank_consumption if self._tank_consumption else None
+
+    def load(self, json) -> bool:
+        if not json:
+            return False
+        self._tank_consumption = read_value(json, 'consumption', self._tank_consumption)
+        self._tank_cost = read_value(json, 'cost', self._tank_cost)
+        self._data_time = read_value(json, 'dataTime', self._data_time)
+        self._tank_temp = read_value(json, 'tankTemperature', self._outdoor_temp)
+        self._outdoor_temp = read_value(json, 'outdoorTemperature', self._outdoor_temp)       
+        return True
+        self._has_changed = True
+
+    def copy(self, other) -> bool:
+        if not other:
+            return False
+        self._tank_consumption = other._tank_consumption
+        self._tank_cost = other._tank_cost
+        self._data_time = other._data_time
+        self._tank_temp = other._tank_temp 
+        self._outdoor_temp =  other._outdoor_temp
+        self._has_changed = True
+        return True

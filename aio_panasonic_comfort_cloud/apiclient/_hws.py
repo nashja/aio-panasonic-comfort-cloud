@@ -5,7 +5,8 @@ from ._timezone import get_current_time_zone
 
 from .. import constants
 from ..hwsdevice import HwsDevice
-from ..panasonicdevice import PanasonicDeviceInfo,PanasonicDeviceEnergy
+from ..panasonicdevice import PanasonicDeviceInfo
+from ..models.hws import HwsConsumption
 
 if TYPE_CHECKING:
     from ._protocol import ApiClientCore
@@ -78,17 +79,21 @@ class HwsMixin(ApiClientCore):
         meaning of each mode value hasn't been confirmed against a real device) """
         await self._async_set_hws(device_info, {"operationMode": new_value})
 
-    async def async_get_hws_energy(self, device_info: PanasonicDeviceInfo) -> PanasonicDeviceEnergy | None:
-        todays_item = await self._async_get_todays_hws_energy(device_info)
+    async def async_get_hws_consumption(self, device_info: PanasonicDeviceInfo) -> HwsConsumption | None:
+        todays_item = await self._async_get_todays_hws_consumption(device_info)
         if todays_item is None:
             return None
-        return PanasonicDeviceEnergy(device_info, todays_item)
+        return todays_item
 
-    async def async_try_update_hws_energy(self, energy: PanasonicDeviceEnergy) -> bool:
-        todays_item = await self._async_get_todays_hws_energy(energy.info)
-        return energy.load(todays_item)
+    async def async_try_update_hws_consumption(self, device_info: PanasonicDeviceInfo,
+                                          energy: HwsConsumption) -> bool | None:
+        todays_item = await self._async_get_todays_hws_consumption(device_info)
+        if not todays_item:
+            return False
+        else:
+            return energy.copy(todays_item)
 
-    async def _async_get_todays_hws_energy(self, device_info: PanasonicDeviceInfo):
+    async def _async_get_todays_hws_consumption(self, device_info: PanasonicDeviceInfo) ->HwsConsumption | None:
         today = datetime.now().strftime("%Y%m%d")
         device_guid = device_info.guid
         if not device_guid:
@@ -115,6 +120,6 @@ class HwsMixin(ApiClientCore):
                 continue
             if item['dataTime'] != today:
                 continue
-            todays_item = item
+            todays_item = HwsConsumption(item)
             break
         return todays_item
