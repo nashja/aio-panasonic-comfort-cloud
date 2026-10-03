@@ -1,9 +1,11 @@
 import logging
 from typing import TYPE_CHECKING
+from datetime import datetime
+from ._timezone import get_current_time_zone
 
 from .. import constants
 from ..hwsdevice import HwsDevice
-from ..panasonicdevice import PanasonicDeviceInfo
+from ..panasonicdevice import PanasonicDeviceInfo,PanasonicDeviceEnergy
 
 if TYPE_CHECKING:
     from ._protocol import ApiClientCore
@@ -75,3 +77,44 @@ class HwsMixin(ApiClientCore):
         """ Set the raw operation mode value (unverified, see _async_set_hws; the
         meaning of each mode value hasn't been confirmed against a real device) """
         await self._async_set_hws(device_info, {"operationMode": new_value})
+
+    async def async_get_hws_energy(self, device_info: PanasonicDeviceInfo) -> PanasonicDeviceEnergy | None:
+        todays_item = await self._async_get_todays_hws_energy(device_info)
+        if todays_item is None:
+            return None
+        return PanasonicDeviceEnergy(device_info, todays_item)
+
+    async def async_try_update_hws_energy(self, energy: PanasonicDeviceEnergy) -> bool:
+        todays_item = await self._async_get_todays_hws_energy(energy.info)
+        return energy.load(todays_item)
+
+    async def _async_get_todays_hws_energy(self, device_info: PanasonicDeviceInfo):
+        today = datetime.now().strftime("%Y%m%d")
+        device_guid = device_info.guid
+        if not device_guid:
+            return None
+
+        payload = {
+            "deviceGuid": device_guid,
+            "dataMode": constants.AquareaDataMode.Month.value,
+            "date": today,
+            "osTimezone": get_current_time_zone()
+        }
+        # change url for hws devices
+
+        history = await self.execute_post(self._get_hws_device_history_url(), payload, "get_todays_hws_energy", 200)
+
+        if history is None:
+            return None
+        if 'historyDataList' not in history:
+            return None
+        history_items = history['historyDataList']
+        todays_item = None
+        for item in history_items:
+            if 'dataTime' not in item:
+                continue
+            if item['dataTime'] != today:
+                continue
+            todays_item = item
+            break
+        return todays_item
