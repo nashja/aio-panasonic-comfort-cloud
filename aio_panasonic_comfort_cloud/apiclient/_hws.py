@@ -7,7 +7,6 @@ from .. import constants
 from ..hwsdevice import HwsDevice
 from ..panasonicdevice import PanasonicDeviceInfo
 from ..models.hws import HwsConsumption
-from homeassistant.util import dt as dt_util
 
 if TYPE_CHECKING:
     from ._protocol import ApiClientCore
@@ -128,18 +127,20 @@ class HwsMixin(ApiClientCore):
         device_guid = device_info.guid
         if not device_guid:
             return None
-        local_now = dt_util.now()
-        local_date = local_now.date().strftime("%Y%m%d")
-        tz = local_now.tzinfo  # this is a tz string
-        offset_str = datetime.now(tz).strftime("%z")
+        today = datetime.now().strftime("%Y%m%d")
+
+        #local_now = dt_util.now()
+        #local_date = local_now.date().strftime("%Y%m%d")
+        #tz = local_now.tzinfo  # this is a tz string
+        #offset_str = datetime.now(tz).strftime("%z")
         # Formats as +HHMM (e.g., +1100), slice to add colon for +HH:MM
-        formatted_tz = f"{offset_str[:3]}:{offset_str[3:]}"
+        #formatted_tz = f"{offset_str[:3]}:{offset_str[3:]}"
 
         payload = {
             "deviceGuid": device_guid,
             "dataMode": constants.AquareaDataMode.Month.value,
-            "date": local_date,
-            "osTimezone": formatted_tz,
+            "date": today,
+            "osTimezone": get_current_time_zone()
         }
 
         history = await self.execute_post(
@@ -155,7 +156,7 @@ class HwsMixin(ApiClientCore):
         for item in history_items:
             if "dataTime" not in item:
                 continue
-            if item["dataTime"] != local_date:
+            if item["dataTime"] != today:
                 continue
             todays_item = HwsConsumption(item)
             break
