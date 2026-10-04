@@ -7,6 +7,7 @@ from .. import constants
 from ..hwsdevice import HwsDevice
 from ..panasonicdevice import PanasonicDeviceInfo
 from ..models.hws import HwsConsumption
+from homeassistant.util import dt as dt_util
 
 if TYPE_CHECKING:
     from ._protocol import ApiClientCore
@@ -15,21 +16,32 @@ else:
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class HwsMixin(ApiClientCore):
     """Status/control for standalone Heat Pump Hot Water Tank (HWS) devices."""
 
     async def _async_get_hws_status(self, device_info: PanasonicDeviceInfo):
-        if (device_info.status_data_mode == constants.StatusDataMode.LIVE
-            or (device_info.id in self._cache_devices and self._cache_devices[device_info.id] <= 0)):
+        if device_info.status_data_mode == constants.StatusDataMode.LIVE or (
+            device_info.id in self._cache_devices
+            and self._cache_devices[device_info.id] <= 0
+        ):
             try:
-                json_response = await self.execute_get(self._get_hws_device_info_url(device_info.guid), "get_hws_status", 200)
+                json_response = await self.execute_get(
+                    self._get_hws_device_info_url(device_info.guid),
+                    "get_hws_status",
+                    200,
+                )
                 device_info.status_data_mode = constants.StatusDataMode.LIVE
                 return json_response
             except Exception as e:  # noqa: BLE001
-                _LOGGER.warning(f"Failed to get live status for device {device_info.guid} switching to cached data.{e}")
+                _LOGGER.warning(
+                    f"Failed to get live status for device {device_info.guid} switching to cached data.{e}"
+                )
                 device_info.status_data_mode = constants.StatusDataMode.CACHED
-                self._cache_devices[device_info.id] = 10 # FIXME??
-        json_response = await self.execute_get(self._get_hws_device_info_url(device_info.guid), "get_status", 200)
+                self._cache_devices[device_info.id] = 10  # FIXME??
+        json_response = await self.execute_get(
+            self._get_hws_device_info_url(device_info.guid), "get_status", 200
+        )
         self._cache_devices[device_info.id] -= 1
         return json_response
 
@@ -56,69 +68,94 @@ class HwsMixin(ApiClientCore):
         registered — against a live account).
         """
         payload = {"deviceGuid": device_info.guid, "parameters": body}
-        await self.execute_post(self._get_hws_device_status_control_url(), payload, "set_hws_device", 200)
+        await self.execute_post(
+            self._get_hws_device_status_control_url(), payload, "set_hws_device", 200
+        )
 
-    async def set_hws_tank_temperature(self, device_info: PanasonicDeviceInfo, temperature: float):
-        """ Set the target temperature of the hot water tank (unverified, see _async_set_hws) """
+    async def set_hws_tank_temperature(
+        self, device_info: PanasonicDeviceInfo, temperature: float
+    ):
+        """Set the target temperature of the hot water tank (unverified, see _async_set_hws)"""
         await self._async_set_hws(device_info, {"tankTemperature": temperature})
 
-    async def set_hws_boost_mode(self, device_info: PanasonicDeviceInfo, new_value: str | constants.AquareaOperationStatus):
-        """ Turn boost mode on/off (unverified, see _async_set_hws) """
+    async def set_hws_boost_mode(
+        self,
+        device_info: PanasonicDeviceInfo,
+        new_value: str | constants.AquareaOperationStatus,
+    ):
+        """Turn boost mode on/off (unverified, see _async_set_hws)"""
         if isinstance(new_value, str):
             new_value = constants.AquareaOperationStatus[new_value]
         await self._async_set_hws(device_info, {"boostMode": new_value.value})
 
-    async def set_hws_operation_status(self, device_info: PanasonicDeviceInfo, new_value: str | constants.AquareaOperationStatus):
-        """ Turn the heat pump unit on/off (unverified, see _async_set_hws) """
+    async def set_hws_operation_status(
+        self,
+        device_info: PanasonicDeviceInfo,
+        new_value: str | constants.AquareaOperationStatus,
+    ):
+        """Turn the heat pump unit on/off (unverified, see _async_set_hws)"""
         if isinstance(new_value, str):
             new_value = constants.AquareaOperationStatus[new_value]
         await self._async_set_hws(device_info, {"hpuOperationStatus": new_value.value})
 
-    async def set_hws_operation_mode(self, device_info: PanasonicDeviceInfo, new_value: int):
-        """ Set the raw operation mode value (unverified, see _async_set_hws; the
-        meaning of each mode value hasn't been confirmed against a real device) """
+    async def set_hws_operation_mode(
+        self, device_info: PanasonicDeviceInfo, new_value: int
+    ):
+        """Set the raw operation mode value (unverified, see _async_set_hws; the
+        meaning of each mode value hasn't been confirmed against a real device)"""
         await self._async_set_hws(device_info, {"operationMode": new_value})
 
-    async def async_get_hws_consumption(self, device_info: PanasonicDeviceInfo) -> HwsConsumption | None:
+    async def async_get_hws_consumption(
+        self, device_info: PanasonicDeviceInfo
+    ) -> HwsConsumption | None:
         todays_item = await self._async_get_todays_hws_consumption(device_info)
         if todays_item is None:
             return None
         return todays_item
 
-    async def async_try_update_hws_consumption(self, device_info: PanasonicDeviceInfo,
-                                          energy: HwsConsumption) -> bool | None:
+    async def async_try_update_hws_consumption(
+        self, device_info: PanasonicDeviceInfo, energy: HwsConsumption
+    ) -> bool | None:
         todays_item = await self._async_get_todays_hws_consumption(device_info)
         if not todays_item:
             return False
         else:
             return energy.copy(todays_item)
 
-    async def _async_get_todays_hws_consumption(self, device_info: PanasonicDeviceInfo) ->HwsConsumption | None:
-        today = datetime.now().strftime("%Y%m%d")
+    async def _async_get_todays_hws_consumption(
+        self, device_info: PanasonicDeviceInfo
+    ) -> HwsConsumption | None:
         device_guid = device_info.guid
         if not device_guid:
             return None
+        local_now = dt_util.now()
+        local_date = local_now.date().strftime("%Y%m%d")
+        tz = local_now.tzinfo  # this is a tz string
+        offset_str = datetime.now(tz).strftime("%z")
+        # Formats as +HHMM (e.g., +1100), slice to add colon for +HH:MM
+        formatted_tz = f"{offset_str[:3]}:{offset_str[3:]}"
 
         payload = {
             "deviceGuid": device_guid,
             "dataMode": constants.AquareaDataMode.Month.value,
-            "date": today,
-            "osTimezone": get_current_time_zone()
+            "date": local_date,
+            "osTimezone": formatted_tz,
         }
-        # change url for hws devices
 
-        history = await self.execute_post(self._get_hws_device_history_url(), payload, "get_todays_hws_energy", 200)
+        history = await self.execute_post(
+            self._get_hws_device_history_url(), payload, "get_todays_hws_energy", 200
+        )
 
         if history is None:
             return None
-        if 'historyDataList' not in history:
+        if "historyDataList" not in history:
             return None
-        history_items = history['historyDataList']
+        history_items = history["historyDataList"]
         todays_item = None
         for item in history_items:
-            if 'dataTime' not in item:
+            if "dataTime" not in item:
                 continue
-            if item['dataTime'] != today:
+            if item["dataTime"] != local_date:
                 continue
             todays_item = HwsConsumption(item)
             break
