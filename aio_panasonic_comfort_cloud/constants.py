@@ -206,9 +206,26 @@ class HwsWeekdaySettings(Enum):
     Sunday = 7
 
 class HwsDailyModeSettings(Enum):
-    """Mode settings for HWS devices. To be verified"""
+    """Mode settings For the scheduling parameters"""
     Timer = 0
     Continuous = 1
+
+class HwsBoostModeSettings(Enum):
+    """Mode settings for HWS devices Boost Mode"""
+    Off = 0
+    On = 1    
+
+class HwsOperationModeSettings(Enum):
+    """Mode settings for HWS devices Boost Mode"""
+    Schedule = 0
+    On = 1    
+    Holiday = 2
+
+class HwsOperationStatus(Enum):
+    """Whole-device, tank or zone on/off status."""
+    Off = 0
+    On = 1
+    Unknown = 2
 
 HWS_DEVICE_TYPE = "11"
 

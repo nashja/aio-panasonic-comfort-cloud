@@ -55,54 +55,43 @@ class HwsMixin(ApiClientCore):
     async def _async_set_hws(self, device_info: PanasonicDeviceInfo, body: dict):
         """Send a partial update to an HWS device.
 
-        HWS devices report their state as a ``parameters`` object under
-        ``/device/group`` with the same shape as an air conditioner's
-        (``hpuOperationStatus``/``operationMode``/``boostMode``/``tankTemperature``
-        instead of AC fields like ``operate``/``operationMode``), so this
-        goes through the same ``/deviceStatus/control`` endpoint as
-        :meth:`AirConditionerMixin.set_device_raw` rather than the
-        ``/device/a2wInfoUpdate`` endpoint previously guessed from an app
-        capture, which doesn't actually exist (confirmed 403 "Missing
-        Authentication Token" — API Gateway's error for a route that isn't
-        registered — against a live account).
+        HWS devices respond to a few commands sent with the 
         """
         payload = {"deviceGuid": device_info.guid, "parameters": body}
         await self.execute_post(
             self._get_hws_device_status_control_url(), payload, "set_hws_device", 200
         )
 
-    async def set_hws_tank_temperature(
-        self, device_info: PanasonicDeviceInfo, temperature: float
-    ):
-        """Set the target temperature of the hot water tank (unverified, see _async_set_hws)"""
-        await self._async_set_hws(device_info, {"tankTemperature": temperature})
-
     async def set_hws_boost_mode(
         self,
         device_info: PanasonicDeviceInfo,
-        new_value: str | constants.AquareaOperationStatus,
+        new_value: str | constants.HwsBoostModeSettings,
     ):
-        """Turn boost mode on/off (unverified, see _async_set_hws)"""
+        """Turn boost mode on/off This is now verified"""
         if isinstance(new_value, str):
-            new_value = constants.AquareaOperationStatus[new_value]
+            new_value = constants.HwsBoostModeSettings[new_value]
         await self._async_set_hws(device_info, {"boostMode": new_value.value})
 
-    async def set_hws_operation_status(
-        self,
-        device_info: PanasonicDeviceInfo,
-        new_value: str | constants.AquareaOperationStatus,
-    ):
-        """Turn the heat pump unit on/off (unverified, see _async_set_hws)"""
-        if isinstance(new_value, str):
-            new_value = constants.AquareaOperationStatus[new_value]
-        await self._async_set_hws(device_info, {"hpuOperationStatus": new_value.value})
-
     async def set_hws_operation_mode(
-        self, device_info: PanasonicDeviceInfo, new_value: int
+        self, device_info: PanasonicDeviceInfo, new_value: constants.HwsOperationModeSettings
     ):
         """Set the raw operation mode value (unverified, see _async_set_hws; the
         meaning of each mode value hasn't been confirmed against a real device)"""
-        await self._async_set_hws(device_info, {"operationMode": new_value})
+        await self._async_set_hws(device_info, {"operationMode": new_value.value})
+
+    async def set_hws_holiday_mode(
+        self, device_info: PanasonicDeviceInfo
+    ):
+        """Turn on Holiday Mode Set the operation mode value (the
+        meaning of each mode value has been confirmed against a real device)"""
+        await self._async_set_hws(device_info, {"operationMode": constants.HwsOperationModeSettings.Holiday.value})
+
+    async def set_hws_schedule_mode(
+        self, device_info: PanasonicDeviceInfo
+    ):
+        """Turn on Schedule Mode - the default.  Set the operation mode value (the
+        meaning of each mode value has been confirmed against a real device)"""
+        await self._async_set_hws(device_info, {"operationMode": constants.HwsOperationModeSettings.Schedule.value})        
 
     async def async_get_hws_consumption(
         self, device_info: PanasonicDeviceInfo

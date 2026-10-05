@@ -75,9 +75,9 @@ class HwsParameters:
     """Global parameters for the HWS tank. These are returned by the /hphw/deviceStatus endpoint."""
 
     def __init__(self, json=None) -> None:
-        self._hpu_operation_status = constants.AquareaOperationStatus.Off
-        self._operation_mode = constants.AquareaOperationMode.Off
-        self._boost_mode = constants.AquareaOperationStatus.Off
+        self._hpu_operation_status = constants.HwsOperationStatus.Off
+        self._operation_mode = constants.HwsBoostModeSettings.Off
+        self._boost_mode = constants.HwsBoostModeSettings.Off
         self._tank_temperature: float | None = None
         self._outdoor_temperature: float | None = None    
         self.load(json)
@@ -142,9 +142,9 @@ class HwsParameters:
             return False
         self._has_changed = False
 
-        self._hpu_operation_status = read_enum(json, 'hpuOperationStatus', constants.AquareaOperationStatus, self._hpu_operation_status)
-        self._operation_mode = read_enum(json, 'operationMode', constants.AquareaOperationStatus,self._operation_mode)
-        self._boost_mode = read_enum(json, 'boostMode', constants.AquareaOperationStatus, self._boost_mode)
+        self._hpu_operation_status = read_enum(json, 'hpuOperationStatus', constants.HwsOperationStatus, self._hpu_operation_status)
+        self._operation_mode = read_enum(json, 'operationMode', constants.HwsOperationModeSettings,self._operation_mode)
+        self._boost_mode = read_enum(json, 'boostMode', constants.HwsBoostModeSettings, self._boost_mode)
         self._tank_temperature = read_value(json, 'tankTemperature', self._tank_temperature)
         self._outdoor_temperature = read_value(json, 'outdoorTemperature', self._outdoor_temperature)
 
