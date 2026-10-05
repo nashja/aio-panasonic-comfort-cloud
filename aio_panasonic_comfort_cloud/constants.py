@@ -207,9 +207,8 @@ class HwsWeekdaySettings(Enum):
 
 class HwsDailyModeSettings(Enum):
     """Mode settings for HWS devices. To be verified"""
-    Always = 0
-    Set = 1
-    Pv = 2 # to be verified
+    Timer = 0
+    Continuous = 1
 
 HWS_DEVICE_TYPE = "11"
 
