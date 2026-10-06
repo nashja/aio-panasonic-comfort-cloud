@@ -1,4 +1,5 @@
 import logging
+import json
 
 from .. import constants
 from ..exceptions import DeviceIsNotReadyError
@@ -79,7 +80,8 @@ class HwsParameters:
         self._operation_mode = constants.HwsBoostModeSettings.Off
         self._boost_mode = constants.HwsBoostModeSettings.Off
         self._tank_temperature: float | None = None
-        self._outdoor_temperature: float | None = None    
+        self._outdoor_temperature: float | None = None
+        self._weeklySettings: list[HwsDailySettings] | None = None
         self.load(json)
 
     @property
@@ -136,6 +138,28 @@ class HwsParameters:
             return
         self._outdoor_temperature = value
         self._has_changed = True    
+
+
+    def _load_weekly_settings(self, json):
+        weeklySettings_json = json.get("weeklySettingInfo") # a json array of 7 daily settings, one for each day of the week
+        if not weeklySettings_json:
+            self._has_weeklySettings = False
+            return
+        self._has_weeklySettings = True
+        if self._weeklySettings is None:
+            self._weeklySettings = []
+            for day_settings_json in weeklySettings_json:
+                self._weeklySettings.append(HwsDailySettings(day_settings_json))
+        else:
+            for index,day_settings in enumerate(self._weeklySettings):
+                day_settings.load(weeklySettings_json[index])
+        self._has_changed = True
+        return
+
+    
+    @property
+    def weeklySettings(self):
+        return  self._weeklySettings
     
     def load(self, json) -> bool:
         if not json:
@@ -147,7 +171,7 @@ class HwsParameters:
         self._boost_mode = read_enum(json, 'boostMode', constants.HwsBoostModeSettings, self._boost_mode)
         self._tank_temperature = read_value(json, 'tankTemperature', self._tank_temperature)
         self._outdoor_temperature = read_value(json, 'outdoorTemperature', self._outdoor_temperature)
-
+        self._load_weekly_settings(json)       
         self._has_changed = True
         return self._has_changed
     
@@ -304,14 +328,32 @@ class HwsInhibitTimeSettings:
     @property
     def inhibit_time_available(self):
         return self._inhibit_time_available
+    @inhibit_time_available.setter
+    def inhibit_time_available(self, value):
+        if self._inhibit_time_available == value:
+            return
+        self._inhibit_time_available = value
+        self._has_changed = True
 
     @property
     def start_time(self):
-        return self._start_time     
-
+        return self._start_time 
+    @start_time.setter  
+    def start_time(self, value):
+        if self._start_time == value:
+            return
+        self._start_time = value
+        self._has_changed = True
+   
     @property
     def endTime(self):
         return self._endTime
+    @endTime.setter
+    def endTime(self, value):
+        if self._endTime == value:
+            return
+        self._endTime = value
+        self._has_changed = True
     
     def load(self, json) -> bool:
         if not json:
@@ -328,7 +370,7 @@ class HwsSet1Settings:
     """Which hours to allow operation when heating is set to run only periodically"""
 
     def __init__(self, json=None) -> None:
-        self._start_time: int | None = None       
+        self._startTime: int | None = None       
         self._endTime: int | None = None                                 
         self.load(json)
 
@@ -337,18 +379,31 @@ class HwsSet1Settings:
         return self._has_changed
 
     @property
-    def start_time(self):
-        return self._start_time     
+    def startTime(self):
+        return self._startTime 
+    @startTime.setter
+    def startTime(self, value):
+        if self._startTime == value:
+            return
+        self._startTime = value
+        self._has_changed = True
+
 
     @property
     def endTime(self):
         return self._endTime
+    @endTime.setter
+    def endTime(self, value):
+        if self._endTime == value:
+            return
+        self._endTime = value
+        self._has_changed = True
     
     def load(self, json) -> bool:
         if not json:
             self._has_changed = False
             return False
-        self._start_time = read_value(json, 'startTime', self._start_time)
+        self._startTime = read_value(json, 'startTime', self._startTime)
         self._endTime = read_value(json, 'endTime', self._endTime)
         self._has_changed = True
         return self._has_changed
@@ -359,7 +414,7 @@ class HwsSet2Settings:
 
     def __init__(self, json=None) -> None:
         self._set2_available: int | None = None  #shoud be an enum
-        self._start_time: int | None = None       
+        self._startTime: int | None = None       
         self._endTime: int | None = None          
         self._start_temperature: int | None = None
         self._end_temperature: int | None = None                       
@@ -372,28 +427,60 @@ class HwsSet2Settings:
     @property
     def set2_available(self):
         return self._set2_available
+    @set2_available.setter
+    def set2_available(self, value):
+        if self._set2_available == value:
+            return
+        self._set2_available = value
+        self._has_changed = True
 
     @property
-    def start_time(self):
-        return self._start_time     
+    def startTime(self):
+        return self._startTime
+    @startTime.setter
+    def startTime(self, value):
+        if self._startTime == value:
+            return
+        self._startTime = value
+        self._has_changed = True
 
     @property
     def endTime(self):
         return self._endTime
+    @endTime.setter
+    def endTime(self, value):
+        if self._endTime == value:
+            return
+        self._endTime = value   
+        self._has_changed = True
+ 
 
     @property
     def start_temperature(self):
         return self._start_temperature
+    @start_temperature.setter
+    def start_temperature(self, value):
+        if self._start_temperature == value:
+            return
+        self._start_temperature = value
+        self._has_changed = True
 
     @property
     def end_temperature(self):
         return self._end_temperature
+    @end_temperature.setter
+    def end_temperature(self, value):
+        if self._end_temperature == value:
+            return
+        self._end_temperature = value
+        self._has_changed = True
 
     def load(self, json) -> bool:
         if not json:
             self._has_changed = False
             return False
-        self._start_time = read_value(json, 'startTime', self._start_time)
+        self._set2_available = read_value(json, 'set2Available', self._set2_available)
+        self._startTime = read_value(json, 'startTime', self._startTime)
         self._endTime = read_value(json, 'endTime', self._endTime)
         self._start_temperature = read_value(json, 'startTemperature', self._start_temperature)
         self._end_temperature = read_value(json, 'endTemperature', self._end_temperature)
@@ -419,10 +506,22 @@ class HwsDailySettings:
     @property
     def weekday(self):
         return self._weekday
+    @weekday.setter
+    def weekday(self, value):
+        if self._weekday == value:
+            return
+        self._weekday = value
+        self._has_changed = True
 
     @property
     def mode(self):
         return self._mode
+    @mode.setter
+    def mode(self, value):
+        if self._mode == value:
+            return
+        self._mode = value
+        self._has_changed = True
 
     @property
     def inhibit_time(self):
@@ -478,3 +577,28 @@ class HwsDailySettings:
         self._has_changed = True
         return True
 
+class HwsCustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, HwsDailySettings):
+            return {"weekday": obj.weekday.value if obj.weekday is not None else None, 
+                    "mode": obj.mode.value if obj.mode else None, 
+                    "inhibitTime": obj.inhibit_time if obj.inhibit_time else None, 
+                    "set1": obj.set1 if obj.set1 else None, 
+                    "set2": obj.set2 if obj.set2 else None}
+        if isinstance(obj, HwsSet1Settings):
+            return{"startTime": obj.startTime if obj.startTime is not None else None, 
+                    "endTime": obj.endTime if obj.endTime is not None else None
+            }
+        if isinstance(obj, HwsSet2Settings):
+            return{"set2Available": obj.set2_available if obj.set2_available is not None else None, 
+                    "startTime": obj.startTime if obj.startTime is not None else None, 
+                    "endTime": obj.endTime if obj.endTime is not None else None,
+                    "startTemperature": obj.start_temperature if obj.start_temperature is not None else None,
+                    "endTemperature": obj.end_temperature if obj.end_temperature is not None else None
+            }
+        if isinstance(obj, HwsInhibitTimeSettings):
+            return{"inhibitTimeAvailable": obj.inhibit_time_available if obj.inhibit_time_available is not None else None, 
+                    "startTime": obj.start_time if obj.start_time is not None else None, 
+                    "endTime": obj.endTime if obj.endTime is not None else None
+            }
+        return super().default(obj)

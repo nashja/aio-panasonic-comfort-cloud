@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-
 from .panasonicdevice import PanasonicDeviceInfo
 from .models.hws import HwsDeviceParameters, HwsParameters
 from .exceptions import DeviceIsNotReadyError
@@ -22,6 +21,7 @@ class HwsDevice:
         self._last_update = datetime.now(timezone.utc)
         self._load_device_parameters(json)
         self._load_parameters(json)
+
 
     @property
     def id(self) -> str:
@@ -80,6 +80,8 @@ class HwsDevice:
             self._parameters.load(parameters_json)
         self._has_changed = True
         return
+
+
 
     def load(self, json) -> bool:
         if not json:

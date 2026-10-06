@@ -227,6 +227,14 @@ class HwsOperationStatus(Enum):
     On = 1
     Unknown = 2
 
+class HwdDataMode(Enum):
+    """dataMode values for the HWS /hphw/deviceHistoryData endpoint.
+
+    """
+    Day = 0
+    Month = 1
+    Year = 2
+
 HWS_DEVICE_TYPE = "11"
 
 

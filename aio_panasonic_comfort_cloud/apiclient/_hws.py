@@ -6,7 +6,8 @@ from ._timezone import get_current_time_zone
 from .. import constants
 from ..hwsdevice import HwsDevice
 from ..panasonicdevice import PanasonicDeviceInfo
-from ..models.hws import HwsConsumption
+from ..models.hws import HwsConsumption, HwsCustomEncoder,HwsDailySettings
+import json
 
 if TYPE_CHECKING:
     from ._protocol import ApiClientCore
@@ -110,6 +111,23 @@ class HwsMixin(ApiClientCore):
         else:
             return energy.copy(todays_item)
 
+    async def async_set_hws_weekly_settings(
+        self, device_info: PanasonicDeviceInfo, weekly_settings: list[HwsDailySettings]
+    ):
+        """Set the weekly settings for the HWS device."""
+        # first encode the json into a string using a custom encoder to handle the HwsDailySettings objects
+        # validted that this works.
+        payload = json.dumps({
+            "deviceGuid": device_info.guid, 
+            "parameters": {"weeklySettingInfo": weekly_settings}
+            },cls=HwsCustomEncoder)
+        # then convert back into a json object to send to the API
+        new_payload = json.loads(payload)
+
+        await self.execute_post(
+            self._get_hws_device_status_control_url(), new_payload, "set_hws_weekly_settings", 200
+        )
+
     async def _async_get_todays_hws_consumption(
         self, device_info: PanasonicDeviceInfo
     ) -> HwsConsumption | None:
@@ -118,16 +136,9 @@ class HwsMixin(ApiClientCore):
             return None
         today = datetime.now().strftime("%Y%m%d")
 
-        #local_now = dt_util.now()
-        #local_date = local_now.date().strftime("%Y%m%d")
-        #tz = local_now.tzinfo  # this is a tz string
-        #offset_str = datetime.now(tz).strftime("%z")
-        # Formats as +HHMM (e.g., +1100), slice to add colon for +HH:MM
-        #formatted_tz = f"{offset_str[:3]}:{offset_str[3:]}"
-
         payload = {
             "deviceGuid": device_guid,
-            "dataMode": constants.AquareaDataMode.Month.value,
+            "dataMode": constants.HwdDataMode.Month.value,
             "date": today,
             "osTimezone": get_current_time_zone()
         }
