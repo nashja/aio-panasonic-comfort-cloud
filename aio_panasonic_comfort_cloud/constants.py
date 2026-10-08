@@ -1,4 +1,3 @@
-
 from enum import Enum
 
 
@@ -71,28 +70,34 @@ class NanoeMode(Enum):
     ModeG = 3
     All = 4
 
+
 class EcoNaviMode(Enum):
     Unavailable = 0
     Off = 1
     On = 2
+
 
 class EcoFunctionMode(Enum):
     Unavailable = 0
     Off = 1
     On = 2
 
+
 class ZoneMode(Enum):
     Off = 0
     On = 1
+
 
 class InsideCleaningMode(Enum):
     Off = 0
     On = 1
 
+
 class IAutoXMode(Enum):
     Unavailable = 0
     Off = 1
     On = 2
+
 
 class StatusDataMode(Enum):
     LIVE = 0
@@ -106,6 +111,7 @@ AQUAREA_DEVICE_TYPE = "2"
 
 class AquareaOperationStatus(Enum):
     """Whole-device, tank or zone on/off status."""
+
     Off = 0
     On = 1
     Unknown = 2
@@ -113,6 +119,7 @@ class AquareaOperationStatus(Enum):
 
 class AquareaOperationMode(Enum):
     """Operation mode as reported in the device status (read-only)."""
+
     Off = 0
     Heat = 1
     Cool = 2
@@ -122,6 +129,7 @@ class AquareaOperationMode(Enum):
 
 class AquareaUpdateOperationMode(Enum):
     """Operation mode values accepted when changing the mode."""
+
     Off = 0
     Heat = 2
     Cool = 3
@@ -186,6 +194,7 @@ class AquareaDataMode(Enum):
     ``Week`` and a different Year encoding). Aquarea's consumption endpoint
     has no "Week" granularity.
     """
+
     Day = 0
     Month = 1
     Year = 2
@@ -197,6 +206,7 @@ class AquareaDataMode(Enum):
 
 class HwsWeekdaySettings(Enum):
     """Weekday settings for HWS devices."""
+
     Monady = 1
     Tuesday = 2
     Wednesday = 3
@@ -205,35 +215,44 @@ class HwsWeekdaySettings(Enum):
     Saturday = 6
     Sunday = 7
 
+
 class HwsDailyModeSettings(Enum):
     """Mode settings For the scheduling parameters"""
+
     Timer = 0
     Continuous = 1
 
+
 class HwsBoostModeSettings(Enum):
     """Mode settings for HWS devices Boost Mode"""
+
     Off = 0
-    On = 1    
+    On = 1
+
 
 class HwsOperationModeSettings(Enum):
     """Mode settings for HWS devices Boost Mode"""
+
     Schedule = 0
-    On = 1    
+    PVTimer = 1
     Holiday = 2
+
 
 class HwsOperationStatus(Enum):
     """Whole-device, tank or zone on/off status."""
+
     Off = 0
     On = 1
     Unknown = 2
 
-class HwdDataMode(Enum):
-    """dataMode values for the HWS /hphw/deviceHistoryData endpoint.
 
-    """
+class HwdDataMode(Enum):
+    """dataMode values for the HWS /hphw/deviceHistoryData endpoint."""
+
     Day = 0
     Month = 1
     Year = 2
+
 
 HWS_DEVICE_TYPE = "11"
 
